@@ -73,7 +73,7 @@ async def main():
         await list_chats()
         return
     
-    print(f"\nСобираю сообщения в чате {chat.title}...")
+    print(f"\nСобираю сообщения из чата {chat.title}...")
 
     # --- Получаем топики ---
     try:
@@ -117,7 +117,7 @@ async def main():
         messages_by_topic.setdefault(topic_id, []).append(msg)
         topic_name = topics.get(topic_id, f"Topic {topic_id}")
         sender = await msg.get_sender()
-        author = sender.first_name or (sender.username if sender else "?")
+        author = f"{sender.first_name or ''} {sender.last_name or ''} (@{sender.username or ''})" if sender else "?"
         ws.append([topic_name, author, msg.date.strftime("%Y-%m-%d %H:%M"), msg.message])
         total_messages += 1
 
@@ -141,8 +141,7 @@ async def main():
 
             for msg in msgs:
                 sender = await msg.get_sender()
-                # author = f"{sender.username} ({sender.first_name})" or (sender.first_name if sender else "?")
-                author = sender.first_name or (sender.username if sender else "?")
+                author = f"{sender.first_name or ''} {sender.last_name or ''} (@{sender.username or ''})" if sender else "?"
                 print(f"[{msg.date:%Y-%m-%d %H:%M}] {author}: {msg.message}")
                 ws.append([author, msg.date.strftime("%Y-%m-%d %H:%M"), msg.message])
 
