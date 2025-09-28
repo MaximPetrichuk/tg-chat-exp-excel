@@ -1,3 +1,7 @@
 .env
 *.session*
 *.xlsx
+*build*
+*dist*
+__pycache__
+*.spec
