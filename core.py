@@ -10,6 +10,7 @@ import re
 from openpyxl import Workbook
 from telethon import TelegramClient
 from telethon.tl.functions.channels import GetForumTopicsRequest
+from telethon.tl.types import User, Chat, Channel
 from dotenv import load_dotenv, set_key, dotenv_values
 
 # --- Версия программы ---
@@ -97,9 +98,11 @@ async def _list_chats_async(client, phone, log_callback):
         await client.start(phone=phone)
         log_callback("Подключение установлено. Получаю список чатов...")
         async for dialog in client.iter_dialogs():
-            name = getattr(dialog, "name", str(dialog.entity))
-            cid = dialog.id
-            chats.append((name, cid))
+            entity = dialog.entity
+            if isinstance(entity, (Chat, Channel)):
+                name = getattr(dialog, "name", str(entity))
+                cid = dialog.id
+                chats.append((name, cid))
         log_callback(f"Найдено {len(chats)} чатов.")
         return chats
     finally:
@@ -194,10 +197,16 @@ async def _export_messages_async(client, phone, chat_id, year, month, log_callba
                 topic_id = getattr(msg.reply_to, "reply_to_msg_id", 0)
 
             sender = await msg.get_sender()
-            author = f"{(sender.first_name or '')} {(sender.last_name or '')}".strip()
+            author = ""
+            if sender and getattr(sender, "first_name", None):
+                author = f"{(sender.first_name or '')}".strip()
+            if sender and getattr(sender, "last_name", None):
+                author += f" {(sender.last_name or '')}"
             if sender and getattr(sender, "username", None):
                 author += f" (@{sender.username})"
-            messages_by_topic.setdefault(topic_id, []).append((author or "?", msg.date, msg.message))
+            author = author.strip()
+
+            messages_by_topic.setdefault(topic_id, []).append((author or "?", msg.date.astimezone(), msg.message))
             total_messages += 1
             log_counter += 1
             if log_counter % 100 == 0:
